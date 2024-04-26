@@ -1,5 +1,8 @@
 import sys
-from PyQt5.QtWidgets import (QApplication, QMainWindow, QPushButton, QVBoxLayout, QWidget, QLabel, QLineEdit, QMessageBox, QGridLayout, QTextEdit, QHBoxLayout, QFormLayout)
+from PyQt5.QtWidgets import (
+    QApplication, QMainWindow, QPushButton, QVBoxLayout, QWidget, QLabel,
+    QLineEdit, QMessageBox, QTextEdit, QHBoxLayout, QComboBox
+)
 from PyQt5.QtGui import QFont
 from optimization_solver import solve_diet, solve_production_planning, solve_knapsack
 
@@ -9,43 +12,70 @@ class OptimizationApp(QMainWindow):
 
         # Main window setup
         self.setWindowTitle("Optimization Solver")
-        self.setGeometry(100, 100, 1000, 500)  # Increased width for diet section
+        self.setGeometry(200, 200, 1000, 500)
         self.setFont(QFont("Arial", 10))
 
         # Layout
-        main_layout = QHBoxLayout()
-        pp_layout = QFormLayout()
-        kp_layout = QFormLayout()
-        diet_layout = QFormLayout()
+        self.central_widget = QWidget()
+        self.setCentralWidget(self.central_widget)
+        self.layout = QVBoxLayout()
+        self.central_widget.setLayout(self.layout)
 
+        # ComboBox to select problem
+        self.problem_selector = QComboBox(self)
+        self.problem_selector.addItems(["Select Problem", "Production Planning", "Knapsack Problem", "Diet Problem"])
+        self.problem_selector.currentIndexChanged.connect(self.display_selected_problem)
+        self.layout.addWidget(self.problem_selector)
 
-        # Production Planning Section
+    def init_production_planning_layout(self):
+        self.back_button = QPushButton("Back", self)
+        self.back_button.clicked.connect(self.go_back_to_selection)
+
+        self.pp_layout = QVBoxLayout()
         self.labor_input = QLineEdit(self)
         self.material_input = QLineEdit(self)
-        pp_layout.addRow(QLabel("Labor Available:"), self.labor_input)
-        pp_layout.addRow(QLabel("Materials Available:"), self.material_input)
+        self.pp_layout.addWidget(QLabel("Labor Available:"))
+        self.pp_layout.addWidget(self.labor_input)
+        self.pp_layout.addWidget(QLabel("Materials Available:"))
+        self.pp_layout.addWidget(self.material_input)
         self.solve_pp_btn = QPushButton('Solve Production Planning', self)
         self.solve_pp_btn.clicked.connect(self.solve_production_planning)
-        pp_layout.addRow(self.solve_pp_btn)
+        self.pp_layout.addWidget(self.solve_pp_btn)
         self.pp_results_label = QTextEdit()
         self.pp_results_label.setReadOnly(True)
-        pp_layout.addRow(self.pp_results_label)
+        self.pp_layout.addWidget(self.pp_results_label)
+        self.pp_layout.addWidget(self.back_button)
 
-        # Knapsack Section
+
+    def init_knapsack_layout(self):
+        self.back_button = QPushButton("Back", self)
+        self.back_button.clicked.connect(self.go_back_to_selection)
+
+        self.kp_layout = QVBoxLayout()
         self.capacity_input = QLineEdit(self)
         self.values_input = QLineEdit(self)
         self.weights_input = QLineEdit(self)
-        kp_layout.addRow(QLabel("Knapsack Capacity (kg):"), self.capacity_input)
-        kp_layout.addRow(QLabel("Item Values (comma-separated):"), self.values_input)
-        kp_layout.addRow(QLabel("Item Weights (comma-separated):"), self.weights_input)
+        self.kp_layout.addWidget(QLabel("Knapsack Capacity (kg):"))
+        self.kp_layout.addWidget(self.capacity_input)
+        self.kp_layout.addWidget(QLabel("Item Values (comma-separated):"))
+        self.kp_layout.addWidget(self.values_input)
+        self.kp_layout.addWidget(QLabel("Item Weights (comma-separated):"))
+        self.kp_layout.addWidget(self.weights_input)
         self.solve_kp_btn = QPushButton('Solve Knapsack Problem', self)
         self.solve_kp_btn.clicked.connect(self.solve_knapsack)
-        kp_layout.addRow(self.solve_kp_btn)
+        self.kp_layout.addWidget(self.solve_kp_btn)
         self.kp_results_label = QTextEdit()
         self.kp_results_label.setReadOnly(True)
-        kp_layout.addRow(self.kp_results_label)
+        self.kp_layout.addWidget(self.kp_results_label)
+        self.kp_layout.addWidget(self.back_button)
 
-        # Diet Section
+
+    def init_diet_layout(self):
+
+        self.back_button = QPushButton("Back", self)
+        self.back_button.clicked.connect(self.go_back_to_selection)
+        
+        self.diet_layout = QVBoxLayout()
         self.calories_needed_input = QLineEdit(self)
         self.protein_needed_input = QLineEdit(self)
         self.fat_needed_input = QLineEdit(self)
@@ -53,30 +83,76 @@ class OptimizationApp(QMainWindow):
         self.food_protein_input = QLineEdit(self)
         self.food_fat_input = QLineEdit(self)
         self.food_cost_input = QLineEdit(self)
-
-        diet_layout.addRow(QLabel("Calories Needed:"), self.calories_needed_input)
-        diet_layout.addRow(QLabel("Protein Needed (grams):"), self.protein_needed_input)
-        diet_layout.addRow(QLabel("Fat Needed (grams):"), self.fat_needed_input)
-        diet_layout.addRow(QLabel("Food Calories (comma-separated):"), self.food_calories_input)
-        diet_layout.addRow(QLabel("Food Protein (grams, comma-separated):"), self.food_protein_input)
-        diet_layout.addRow(QLabel("Food Fat (grams, comma-separated):"), self.food_fat_input)
-        diet_layout.addRow(QLabel("Food Cost (comma-separated):"), self.food_cost_input)
-
-        self.solve_diet_btn = QPushButton('Solve Diet Problem', self)
+        self.diet_layout.addWidget(QLabel("Calories Needed:"))
+        self.diet_layout.addWidget(self.calories_needed_input)
+        self.diet_layout.addWidget(QLabel("Protein Needed (grams):"))
+        self.diet_layout.addWidget(self.protein_needed_input)
+        self.diet_layout.addWidget(QLabel("Fat Needed (grams):"))
+        self.diet_layout.addWidget(self.fat_needed_input)
+        self.diet_layout.addWidget(QLabel("Food Calories (comma-separated):"))
+        self.diet_layout.addWidget(self.food_calories_input)
+        self.diet_layout.addWidget(QLabel("Food Protein (grams, comma-separated):"))
+        self.diet_layout.addWidget(self.food_protein_input)
+        self.diet_layout.addWidget(QLabel("Food Fat (grams, comma-separated):"))
+        self.diet_layout.addWidget(self.food_fat_input)
+        self.diet_layout.addWidget(QLabel("Food Cost (comma-separated):"))
+        self.diet_layout.addWidget(self.food_cost_input)
+        self.solve_diet_btn = QPushButton('XXXXXXXXX', self)
         self.solve_diet_btn.clicked.connect(self.solve_diet)
-        diet_layout.addRow(self.solve_diet_btn)
+        self.diet_layout.addWidget(self.solve_diet_btn)
         self.diet_results_label = QTextEdit()
         self.diet_results_label.setReadOnly(True)
-        diet_layout.addRow(self.diet_results_label)
+        self.diet_layout.addWidget(self.diet_results_label)
+        self.diet_layout.addWidget(self.back_button)
 
-        # Set central widget and layout
-        central_widget = QWidget()
-        main_layout.addLayout(pp_layout)
-        main_layout.addLayout(kp_layout)
-        main_layout.addLayout(diet_layout)
-        central_widget.setLayout(main_layout)
-        self.setCentralWidget(central_widget)
 
+    def display_selected_problem(self):
+        index = self.problem_selector.currentIndex()
+        if index == 0:  # Select Problem
+            self.layout.removeItem(self.layout.itemAt(1))
+            self.layout.removeItem(self.layout.itemAt(1))
+        elif index == 1:  # Production Planning
+                    # Initialize layouts
+            self.init_production_planning_layout()
+            self.back_button.show()  # Show back button on problem-solving screens
+            self.layout.removeItem(self.layout.itemAt(1))
+            self.layout.removeItem(self.layout.itemAt(1))
+            self.layout.addLayout(self.pp_layout)
+        elif index == 2:  # Knapsack Problem
+            self.init_knapsack_layout()
+            self.back_button.show()  # Show back button on problem-solving screens
+            self.layout.removeItem(self.layout.itemAt(1))
+            self.layout.removeItem(self.layout.itemAt(1))
+            self.layout.addLayout(self.kp_layout)
+        elif index == 3:  # Diet Problem
+            self.init_diet_layout()
+            self.back_button.show()  # Show back button on problem-solving screen
+            self.layout.removeItem(self.layout.itemAt(1))
+            self.layout.removeItem(self.layout.itemAt(1))
+            self.layout.addLayout(self.diet_layout)
+
+    def go_back_to_selection(self):
+      current_index = self.problem_selector.currentIndex()
+      if current_index == 1:
+        self.delete_layout_widgets(self.pp_layout)
+      elif current_index == 2:
+        self.delete_layout_widgets(self.kp_layout)
+      elif current_index == 3:
+        self.delete_layout_widgets(self.diet_layout)
+      self.problem_selector.setCurrentIndex(0)
+
+    def delete_layout_widgets(self, layout):
+        # Delete widgets within the layout
+        while layout.count():
+            item = layout.takeAt(0)
+            widget = item.widget()
+            if widget:
+                widget.deleteLater()
+            else:
+                sublayout = item.layout()
+                if sublayout:
+                    self.delete_layout_widgets(sublayout)
+                    
     def solve_production_planning(self):
         try:
             labor = float(self.labor_input.text())
@@ -121,7 +197,7 @@ class OptimizationApp(QMainWindow):
       except ValueError:
         QMessageBox.warning(self, "Input Error", "Please ensure all inputs are numerical and formatted correctly (comma-separated lists for food data).")
         
-# Main function to run the application
+
 if __name__ == '__main__':
     app = QApplication(sys.argv)
     ex = OptimizationApp()
