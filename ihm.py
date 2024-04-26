@@ -97,7 +97,7 @@ class OptimizationApp(QMainWindow):
         self.diet_layout.addWidget(self.food_fat_input)
         self.diet_layout.addWidget(QLabel("Food Cost (comma-separated):"))
         self.diet_layout.addWidget(self.food_cost_input)
-        self.solve_diet_btn = QPushButton('XXXXXXXXX', self)
+        self.solve_diet_btn = QPushButton('Solve Diet Problem', self)
         self.solve_diet_btn.clicked.connect(self.solve_diet)
         self.diet_layout.addWidget(self.solve_diet_btn)
         self.diet_results_label = QTextEdit()
@@ -109,22 +109,26 @@ class OptimizationApp(QMainWindow):
     def display_selected_problem(self):
         index = self.problem_selector.currentIndex()
         if index == 0:  # Select Problem
+            self.problem_selector.show()
             self.layout.removeItem(self.layout.itemAt(1))
             self.layout.removeItem(self.layout.itemAt(1))
         elif index == 1:  # Production Planning
                     # Initialize layouts
+            self.problem_selector.hide()
             self.init_production_planning_layout()
             self.back_button.show()  # Show back button on problem-solving screens
             self.layout.removeItem(self.layout.itemAt(1))
             self.layout.removeItem(self.layout.itemAt(1))
             self.layout.addLayout(self.pp_layout)
         elif index == 2:  # Knapsack Problem
+            self.problem_selector.hide()
             self.init_knapsack_layout()
             self.back_button.show()  # Show back button on problem-solving screens
             self.layout.removeItem(self.layout.itemAt(1))
             self.layout.removeItem(self.layout.itemAt(1))
             self.layout.addLayout(self.kp_layout)
         elif index == 3:  # Diet Problem
+            self.problem_selector.hide()
             self.init_diet_layout()
             self.back_button.show()  # Show back button on problem-solving screen
             self.layout.removeItem(self.layout.itemAt(1))
