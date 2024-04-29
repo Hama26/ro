@@ -1,10 +1,11 @@
-import sys
 from PyQt5.QtWidgets import (
     QApplication, QMainWindow, QPushButton, QVBoxLayout, QWidget, QLabel,
     QLineEdit, QMessageBox, QTextEdit, QHBoxLayout, QComboBox
 )
-from PyQt5.QtGui import QFont
+from PyQt5.QtGui import QFont, QIcon
+from PyQt5.QtCore import Qt
 from optimization_solver import solve_diet, solve_production_planning, solve_knapsack
+import sys
 
 class OptimizationApp(QMainWindow):
     def __init__(self):
@@ -12,20 +13,56 @@ class OptimizationApp(QMainWindow):
 
         # Main window setup
         self.setWindowTitle("Optimization Solver")
-        self.setGeometry(200, 200, 1000, 500)
+        self.setGeometry(200, 200, 1000, 600)  # Increased height for better layout
         self.setFont(QFont("Arial", 10))
+        self.setStyleSheet("QMainWindow { background-color: #f0f0f0; }"
+                           "QPushButton { background-color: #0078d7; color: white; font-size: 11pt; border-radius: 5px; }"
+                           "QPushButton:hover { background-color: #005fa3; }"
+                           "QLabel, QLineEdit, QTextEdit, QComboBox { font-size: 10pt; }"
+                           "QTextEdit { background-color: #ffffff; }"
+                           "QLineEdit { border-radius: 3px; padding: 2px; background-color: #ffffff; }")
 
         # Layout
         self.central_widget = QWidget()
         self.setCentralWidget(self.central_widget)
-        self.layout = QVBoxLayout()
-        self.central_widget.setLayout(self.layout)
+        self.layout = QVBoxLayout(self.central_widget)
+        self.layout.setSpacing(10)  # Spacing between widgets
 
         # ComboBox to select problem
         self.problem_selector = QComboBox(self)
         self.problem_selector.addItems(["Select Problem", "Production Planning", "Knapsack Problem", "Diet Problem"])
         self.problem_selector.currentIndexChanged.connect(self.display_selected_problem)
         self.layout.addWidget(self.problem_selector)
+
+        # Common Back Button (used across different layouts)
+        self.back_button = QPushButton("Back", self)
+        self.back_button.clicked.connect(self.go_back_to_selection)
+        self.back_button.hide()  # Initially hidden
+
+    # Each init_*_layout method now includes the back button directly, and specific UI enhancements.
+
+    def display_selected_problem(self):
+        # Method modified to handle layouts more cleanly and ensure back button functionality.
+        index = self.problem_selector.currentIndex()
+        if index == 0:  # Select Problem
+            self.clear_current_layout()
+            self.problem_selector.show()
+        else:
+            self.problem_selector.hide()
+            self.back_button.show()
+            if index == 1:
+                self.init_production_planning_layout()
+            elif index == 2:
+                self.init_knapsack_layout()
+            elif index == 3:
+                self.init_diet_layout()
+
+    def clear_current_layout(self):
+        # Removes all widgets from the layout except the problem selector
+        while self.layout.count() > 1:
+            widget_to_remove = self.layout.takeAt(1).widget()
+            if widget_to_remove:
+                widget_to_remove.setParent(None)
 
     def init_production_planning_layout(self):
         self.back_button = QPushButton("Back", self)
