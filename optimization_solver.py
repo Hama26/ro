@@ -1,4 +1,5 @@
 from gurobipy import Model, GRB
+from gurobipy import quicksum
 
 def solve_diet(calories_needed, protein_needed, fat_needed, food_calories, food_protein, food_fat, food_cost):
   """
@@ -40,57 +41,50 @@ def solve_diet(calories_needed, protein_needed, fat_needed, food_calories, food_
   else:
     return [0] * food_count, 0
   
-def solve_production_planning(labor_available, materials_available):
-  """
-  This function solves a production planning problem to maximize total profit,
-  considering labor and material constraints.
+def solve_production_planning(labor_avail, materials_avail, products):
+    """
+    Solves a  production planning problem focusing on maximizing profit with basic labor and material constraints.
 
-  Args:
-      labor_available: The total amount of labor available for production (e.g., hours).
-      materials_available: The total amount of materials available for production (e.g., units).
+    Parameters:
+    - labor_avail (float): Total available labor hours.
+    - materials_avail (float): Total available material units.
+    - products (list of dicts): Information about each product, including profit, labor requirement, and material requirement.
 
-  Returns:
-      A tuple containing:
-          - A tuple with the optimal production quantities for product 1 (P1) and product 2 (P2).
-          - The total profit achieved with this production plan.
-          - The time taken by Gurobi to solve the model (in seconds).
-  """
+    Returns:
+    - A dictionary with production levels and the total profit.
+    """
+    m = Model("Simplified Production Planning")
 
-  # Create a Gurobi model instance named "production_planning"
-  m = Model("production_planning")
+    # Decision variables for production levels of each product
+    x = {p['name']: m.addVar(vtype=GRB.INTEGER, name=f"prod_{p['name']}") for p in products}
 
-  # Define decision variables
-  #   - p1: Production quantity for product 1 (continuous variable)
-  #   - p2: Production quantity for product 2 (continuous variable)
-  p1 = m.addVar(name="P1")
-  p2 = m.addVar(name="P2")
+    # Objective: Maximize profit
+    m.setObjective(quicksum(p['profit'] * x[p['name']] for p in products), GRB.MAXIMIZE)
 
-  # Define the objective function to maximize total profit
-  #   - Profit per unit of product 1 = 20
-  #   - Profit per unit of product 2 = 30
-  m.setObjective(20 * p1 + 30 * p2, GRB.MAXIMIZE)
+    # Constraints
+    # Labor constraint
+    m.addConstr(quicksum(p['labor'] * x[p['name']] for p in products) <= labor_avail, "Labor")
 
-  # Define constraints
-  #   - Labor constraint: Total labor required for production <= available labor
-  #     - Each unit of P1 requires 2 units of labor.
-  #     - Each unit of P2 requires 3 units of labor.
-  m.addConstr(2 * p1 + 3 * p2 <= labor_available, "Labor")
+    # Material constraint
+    m.addConstr(quicksum(p['materials'] * x[p['name']] for p in products) <= materials_avail, "Materials")
 
-  #   - Material constraint: Total materials required for production <= available materials
-  #     - Each unit of P1 requires 3 units of material.
-  #     - Each unit of P2 requires 2 units of material.
-  m.addConstr(3 * p1 + 2 * p2 <= materials_available, "Materials")
+    # Minimum production requirements
+    for p in products:
+        m.addConstr(x[p['name']] >= p['min_production'], f"MinProd_{p['name']}")
+    
+    # Solve model
+    m.optimize()
 
-  # Solve the model using Gurobi optimizer
-  m.optimize()
-
-  # Check if the solution is optimal (GRB.OPTIMAL status code)
-  if m.status == GRB.OPTIMAL:
-    # Extract optimal production quantities and total profit
-    return (p1.X, p2.X), m.objVal, m.Runtime
-  else:
-    # If not optimal, return 0 for all values
-    return (0, 0), 0
+    # Extract solution
+    if m.status == GRB.OPTIMAL:
+        production_levels = {v.varName: v.x for v in m.getVars()}
+        total_profit = m.getObjective().getValue()
+        return {
+            'production_levels': production_levels,
+            'total_profit': total_profit
+        }
+    else:
+        return None
 
 
 def solve_knapsack(capacity, values, weights):
