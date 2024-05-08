@@ -105,6 +105,7 @@ class OptimizationApp(QMainWindow):
         self.total_material_input.setPlaceholderText("Enter total available material units")
         self.pp_layout.addWidget(self.total_material_input)
     # Initial setup for product inputs
+
         self.update_product_inputs(1)
 
     # Button to solve the production planning problem
@@ -313,6 +314,7 @@ class OptimizationApp(QMainWindow):
                 for varName, quantity in result['production_levels'].items():
                     result_message += f"{varName}: {quantity:.0f} units\n"  # Format for integer quantities
                 result_message += f"Total Profit: ${result['total_profit']:.2f}"
+                self.pp_results_label.clear()
                 self.pp_results_label.setText(result_message)
             else:
                 QMessageBox.warning(self, "Solution Error", "No feasible solution was found.")
@@ -323,16 +325,16 @@ class OptimizationApp(QMainWindow):
 
     def solve_knapsack(self):
         try:
-            capacity = int(self.capacity_input.text())
+            capacity = float(self.capacity_input.text())
             if capacity < 0:
                 raise ValueError("Capacity must be non-negative.")
-            values = list(map(int, self.values_input.text().split(',')))
-            weights = list(map(int, self.weights_input.text().split(',')))
+            values = list(map(float, self.values_input.text().split('-')))
+            weights = list(map(float, self.weights_input.text().split('-')))
             if any(v < 0 for v in values) or any(w < 0 for w in weights):
                 raise ValueError("Values and weights must be non-negative.")
-            selected_items, total_value = solve_knapsack(capacity, values, weights)
+            selected_items, total_value, time = solve_knapsack(capacity, values, weights)
             item_display = ", ".join(f"Item {i+1}" for i in selected_items)
-            self.kp_results_label.setText(f"Selected Items: {item_display}\nTotal Value: ${total_value:.2f}")
+            self.kp_results_label.setText(f"Selected Items: {item_display}\nTotal Value: ${total_value:.2f}_\nTime taken: {time:.6f} seconds.")
         except ValueError as e:
             QMessageBox.warning(self, "Input Error", str(e))
 

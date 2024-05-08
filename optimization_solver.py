@@ -132,3 +132,4 @@ def solve_knapsack(capacity, values, weights):
     else:
         # If not optimal, return empty list and 0 for all values
         return [], 0
+    
